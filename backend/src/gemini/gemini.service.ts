@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  GatewayTimeoutException,
   Injectable,
   Logger,
   OnModuleInit,
@@ -11,15 +12,19 @@ import type { KeywordDto } from './dto/translate.dto';
 
 const MODEL = 'gemini-3-flash-preview';
 
+class GeminiTimeoutError extends Error {}
+
 @Injectable()
 export class GeminiService implements OnModuleInit {
   private readonly logger = new Logger(GeminiService.name);
   private client!: GoogleGenAI;
+  private timeoutMs!: number;
 
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit() {
     const apiKey = this.config.getOrThrow<string>('GEMINI_API_KEY');
+    this.timeoutMs = this.config.get<number>('GEMINI_TIMEOUT_MS') ?? 30_000;
     this.client = new GoogleGenAI({ apiKey });
   }
 
@@ -58,17 +63,14 @@ export class GeminiService implements OnModuleInit {
       });
     }
 
-    try {
-      const response = await this.client.models.generateContent({
+    const response = await this.callGemini('feedback', () =>
+      this.client.models.generateContent({
         model: MODEL,
         contents: [{ role: 'user', parts }],
         config: { responseMimeType: 'application/json' },
-      });
-      return JSON.parse(response.text || '{}') as FeedbackResponse;
-    } catch (err) {
-      this.logger.error('Gemini feedback failed', err as Error);
-      throw new BadGatewayException('Failed to get feedback from AI coach.');
-    }
+      }),
+    );
+    return JSON.parse(response.text || '{}') as FeedbackResponse;
   }
 
   async getExampleExplanation(
@@ -91,16 +93,10 @@ export class GeminiService implements OnModuleInit {
     Keep the explanation concise, professional, and formatted in a way that is easy to read (use bullet points if needed).
   `;
 
-    try {
-      const response = await this.client.models.generateContent({
-        model: MODEL,
-        contents: prompt,
-      });
-      return response.text || 'No explanation available.';
-    } catch (err) {
-      this.logger.error('Gemini explanation failed', err as Error);
-      throw new BadGatewayException('Could not generate explanation.');
-    }
+    const response = await this.callGemini('explanation', () =>
+      this.client.models.generateContent({ model: MODEL, contents: prompt }),
+    );
+    return response.text || 'No explanation available.';
   }
 
   async translateKeywords(
@@ -124,16 +120,42 @@ export class GeminiService implements OnModuleInit {
   `;
 
     try {
-      const response = await this.client.models.generateContent({
-        model: MODEL,
-        contents: prompt,
-        config: { responseMimeType: 'application/json' },
-      });
+      const response = await this.callGemini('translate', () =>
+        this.client.models.generateContent({
+          model: MODEL,
+          contents: prompt,
+          config: { responseMimeType: 'application/json' },
+        }),
+      );
       const parsed = JSON.parse(response.text || '[]');
       return Array.isArray(parsed) ? parsed : keywords.map((k) => k.vietnamese);
-    } catch (err) {
-      this.logger.error('Gemini translation failed', err as Error);
+    } catch {
+      // Soft fallback for translations — UX is better with Vietnamese than an error.
       return keywords.map((k) => k.vietnamese);
     }
+  }
+
+  private async callGemini<T>(label: string, fn: () => Promise<T>): Promise<T> {
+    try {
+      return await this.withTimeout(fn());
+    } catch (err) {
+      if (err instanceof GeminiTimeoutError) {
+        this.logger.warn(`Gemini ${label} timed out after ${this.timeoutMs}ms`);
+        throw new GatewayTimeoutException('AI coach took too long to respond.');
+      }
+      this.logger.error(`Gemini ${label} failed`, err as Error);
+      throw new BadGatewayException('AI coach is unavailable right now.');
+    }
+  }
+
+  private withTimeout<T>(p: Promise<T>): Promise<T> {
+    let timer: NodeJS.Timeout;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new GeminiTimeoutError()),
+        this.timeoutMs,
+      );
+    });
+    return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
   }
 }
