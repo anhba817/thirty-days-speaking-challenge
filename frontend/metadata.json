@@ -1,0 +1,6 @@
+{
+  "name": "IELTS 30-Day Speaking Challenge",
+  "description": "A comprehensive English speaking coach based on the 30-day IELTS Speaking Challenge. Master vocabulary, structure ideas, and get AI feedback on your daily practice.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["AI Tutoring", "Progress Tracking", "Speech Practice"]
+}

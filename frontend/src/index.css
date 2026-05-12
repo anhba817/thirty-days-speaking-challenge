@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  --bg-color: #020617;
+  --text-color: theme('colors.slate.300');
+  --heading-color: theme('colors.white');
+  --muted-color: theme('colors.slate.500');
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --item-bg: rgba(255, 255, 255, 0.05);
+  --item-border: rgba(255, 255, 255, 0.05);
+  --grad-start: #1e293b;
+  --grad-end: #020617;
+  --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] {
+  --bg-color: #f8fafc;
+  --text-color: theme('colors.slate.700');
+  --heading-color: theme('colors.slate.900');
+  --muted-color: theme('colors.slate.400');
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --item-bg: rgba(0, 0, 0, 0.02);
+  --item-border: rgba(0, 0, 0, 0.03);
+  --grad-start: #f1f5f9;
+  --grad-end: #f8fafc;
+  --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-app-bg: var(--bg-color);
+  --color-app-text: var(--text-color);
+  --color-app-heading: var(--heading-color);
+  --color-app-muted: var(--muted-color);
+  --color-app-item-bg: var(--item-bg);
+  --color-app-item-border: var(--item-border);
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    @apply transition-colors duration-300;
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+  }
+
+  .item-card {
+    background-color: var(--item-bg);
+    border: 1px solid var(--item-border);
+  }
+
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+
+  .glow-emerald {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+  }
+
+  .waveform-bar {
+    @apply w-1 rounded-full bg-gradient-to-t from-blue-600 to-blue-400;
+  }
+
+  .pulse-ring {
+    @apply border-2 border-[rgba(59,130,246,0.5)] rounded-full;
+  }
+}
+
+.immersive-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 0%, var(--grad-start) 0%, var(--grad-end) 70%);
+  @apply transition-all duration-700;
+}
