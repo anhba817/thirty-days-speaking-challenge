@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
-import type { FeedbackResponse } from './dto/feedback.dto';
+import type {
+  FeedbackResponse,
+  SupportedAudioMimeType,
+} from './dto/feedback.dto';
 import type { KeywordDto } from './dto/translate.dto';
 
 const MODEL = 'gemini-3-flash-preview';
@@ -34,8 +37,16 @@ export class GeminiService implements OnModuleInit {
     userSpeech: string;
     keywords: string[];
     audioBase64?: string;
+    audioMimeType?: SupportedAudioMimeType;
   }): Promise<FeedbackResponse> {
-    const { topicTitle, question, userSpeech, keywords, audioBase64 } = input;
+    const {
+      topicTitle,
+      question,
+      userSpeech,
+      keywords,
+      audioBase64,
+      audioMimeType,
+    } = input;
 
     const prompt = `
     You are an expert IELTS Speaking Examiner and English coach.
@@ -59,7 +70,10 @@ export class GeminiService implements OnModuleInit {
     const parts: any[] = [{ text: prompt }];
     if (audioBase64) {
       parts.push({
-        inlineData: { mimeType: 'audio/webm', data: audioBase64 },
+        inlineData: {
+          mimeType: audioMimeType ?? 'audio/webm',
+          data: audioBase64,
+        },
       });
     }
 

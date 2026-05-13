@@ -8,7 +8,7 @@ import type { JwtPayload } from './auth.types';
 @Injectable()
 export class AuthService implements OnModuleInit {
   private oauthClient!: OAuth2Client;
-  private clientId!: string;
+  private audiences!: string[];
 
   constructor(
     private readonly config: ConfigService,
@@ -17,8 +17,14 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.clientId = this.config.getOrThrow<string>('GOOGLE_CLIENT_ID');
-    this.oauthClient = new OAuth2Client(this.clientId);
+    const primary = this.config.getOrThrow<string>('GOOGLE_CLIENT_ID');
+    const extra = this.config.get<string>('GOOGLE_CLIENT_IDS') ?? '';
+    const additional = extra
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    this.audiences = Array.from(new Set([primary, ...additional]));
+    this.oauthClient = new OAuth2Client(primary);
   }
 
   async loginWithGoogle(idToken: string) {
@@ -26,7 +32,7 @@ export class AuthService implements OnModuleInit {
     try {
       const ticket = await this.oauthClient.verifyIdToken({
         idToken,
-        audience: this.clientId,
+        audience: this.audiences,
       });
       payload = ticket.getPayload();
     } catch {

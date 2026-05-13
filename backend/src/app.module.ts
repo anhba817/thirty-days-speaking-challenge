@@ -24,6 +24,7 @@ import { ProgressModule } from './progress/progress.module';
         DATABASE_URL: Joi.string().uri().required(),
         JWT_SECRET: Joi.string().min(32).required(),
         GOOGLE_CLIENT_ID: Joi.string().required(),
+        GOOGLE_CLIENT_IDS: Joi.string().allow('').optional(),
       }),
       validationOptions: { abortEarly: false },
     }),
