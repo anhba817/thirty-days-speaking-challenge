@@ -25,6 +25,16 @@ import {
 } from 'lucide-react';
 import { CHALLENGE_DATA, DayChallenge } from './data/challenge';
 import { getSpeakingFeedback, FeedbackResponse, getExampleExplanation, translateKeywords } from './services/geminiService';
+import { useAuth } from './auth/AuthContext';
+import { UserMenu } from './auth/UserMenu';
+import {
+  fetchProgress,
+  markDayComplete,
+  mergeCompletedDays,
+  saveAttempt,
+} from './services/progressService';
+
+const PROGRESS_STORAGE_KEY = 'ielts-30-day-progress';
 
 // --- Types ---
 type AppState = 'dashboard' | 'day-detail' | 'feedback';
@@ -52,15 +62,38 @@ export default function App() {
   const [loadingExplanation, setLoadingExplanation] = useState(false);
   const [translatedKeywordsMap, setTranslatedKeywordsMap] = useState<Record<string, string[]>>({});
   const [loadingKeywords, setLoadingKeywords] = useState(false);
+  const { user, token, initialized: authReady } = useAuth();
 
-  // Load progress
+  // Load theme
   useEffect(() => {
-    const saved = localStorage.getItem('ielts-30-day-progress');
-    if (saved) setCompletedDays(JSON.parse(saved));
-    
     const savedTheme = localStorage.getItem('ielts-theme') as 'dark' | 'light';
     if (savedTheme) setTheme(savedTheme);
   }, []);
+
+  // Load progress — from server when authed, localStorage otherwise.
+  // On sign-in, any anonymous local progress is merged into the server first.
+  useEffect(() => {
+    if (!authReady) return;
+
+    if (user && token) {
+      const localRaw = localStorage.getItem(PROGRESS_STORAGE_KEY);
+      const local: number[] = localRaw ? JSON.parse(localRaw) : [];
+
+      const load = local.length
+        ? mergeCompletedDays(token, local).then((data) => {
+            localStorage.removeItem(PROGRESS_STORAGE_KEY);
+            return data;
+          })
+        : fetchProgress(token);
+
+      load
+        .then((data) => setCompletedDays(data.completedDays))
+        .catch((err) => console.error('Failed to load progress', err));
+    } else {
+      const saved = localStorage.getItem(PROGRESS_STORAGE_KEY);
+      setCompletedDays(saved ? JSON.parse(saved) : []);
+    }
+  }, [authReady, user, token]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -68,10 +101,15 @@ export default function App() {
   }, [theme]);
 
   const saveProgress = (dayId: number) => {
-    if (!completedDays.includes(dayId)) {
-      const next = [...completedDays, dayId];
-      setCompletedDays(next);
-      localStorage.setItem('ielts-30-day-progress', JSON.stringify(next));
+    if (completedDays.includes(dayId)) return;
+    const next = [...completedDays, dayId];
+    setCompletedDays(next);
+    if (user && token) {
+      markDayComplete(token, dayId).catch((err) =>
+        console.error('Failed to save progress', err),
+      );
+    } else {
+      localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(next));
     }
   };
 
@@ -96,6 +134,15 @@ export default function App() {
       );
       setFeedback(res);
       saveProgress(selectedDay.id);
+      if (user && token) {
+        saveAttempt(token, {
+          dayId: selectedDay.id,
+          questionIx: currentQuestionIndex,
+          transcript: res.userTranscript ?? userAnswer,
+          feedback: res,
+          score: res.score,
+        }).catch((err) => console.error('Failed to save attempt', err));
+      }
     } catch (err) {
       alert("AI was a bit busy. Please try again.");
     } finally {
@@ -240,13 +287,15 @@ export default function App() {
               <p className="font-bold text-sm text-blue-400">{Math.round((completedDays.length / 30) * 100)}%</p>
             </div>
             <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden border border-white/5">
-              <motion.div 
-                className="h-full bg-blue-500 glow-blue" 
+              <motion.div
+                className="h-full bg-blue-500 glow-blue"
                 initial={{ width: 0 }}
                 animate={{ width: `${(completedDays.length / 30) * 100}%` }}
               />
             </div>
           </div>
+
+          <UserMenu />
         </div>
       </header>
 

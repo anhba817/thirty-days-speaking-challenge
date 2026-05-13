@@ -5,7 +5,10 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 import { GeminiModule } from './gemini/gemini.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { ProgressModule } from './progress/progress.module';
 
 @Module({
   imports: [
@@ -18,11 +21,17 @@ import { GeminiModule } from './gemini/gemini.module';
         FRONTEND_ORIGIN: Joi.string()
           .uri({ scheme: ['http', 'https'] })
           .default('http://localhost:3000'),
+        DATABASE_URL: Joi.string().uri().required(),
+        JWT_SECRET: Joi.string().min(32).required(),
+        GOOGLE_CLIENT_ID: Joi.string().required(),
       }),
       validationOptions: { abortEarly: false },
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 20 }]),
+    PrismaModule,
+    AuthModule,
     GeminiModule,
+    ProgressModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,0 +1,39 @@
+# Production-shaped definition.
+# - For local dev/test, docker-compose.override.yml is auto-merged and adds a
+#   Postgres container + sets DATABASE_URL to it.
+# - For production, run with -f docker-compose.yml only:
+#     docker compose -f docker-compose.yml up -d
+#   and provide DATABASE_URL pointing at your external Postgres.
+#
+# Compose interpolates ${VAR} from the shell or a .env file at the repo root.
+# See .env.example.
+
+services:
+  backend:
+    build:
+      context: ./backend
+    image: ielts-backend
+    container_name: ielts-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_TIMEOUT_MS: ${GEMINI_TIMEOUT_MS:-30000}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
+      PORT: 3001
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ""
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+    image: ielts-frontend
+    container_name: ielts-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend

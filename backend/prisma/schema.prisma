@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  googleId      String         @unique
+  email         String         @unique
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime       @default(now())
+  completedDays CompletedDay[]
+  attempts      Attempt[]
+}
+
+model CompletedDay {
+  userId      String
+  dayId       Int
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, dayId])
+}
+
+model Attempt {
+  id         String   @id @default(cuid())
+  userId     String
+  dayId      Int
+  questionIx Int
+  transcript String?
+  feedback   Json
+  score      Float
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dayId])
+}
