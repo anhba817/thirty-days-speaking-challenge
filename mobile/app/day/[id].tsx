@@ -106,7 +106,7 @@ export default function DayDetail() {
             <LanguagePicker />
           </View>
 
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mb-1">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">
             Day {day.id} · Phase {day.phase}
           </Text>
           <Text className="text-white text-3xl font-bold mb-2">
@@ -123,13 +123,13 @@ export default function DayDetail() {
           />
 
           <View className="bg-slate-900 rounded-2xl p-5 mt-6 mb-6">
-            <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+            <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
               Structure
             </Text>
-            <Text className="text-emerald-400 mb-4">
+            <Text className="text-blue-300 mb-4">
               {currentQuestion.structure}
             </Text>
-            <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+            <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
               Tips
             </Text>
             {currentQuestion.tips.map((tip, i) => (
@@ -139,7 +139,7 @@ export default function DayDetail() {
             ))}
           </View>
 
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
             Vocabulary
           </Text>
           <KeywordList
@@ -148,7 +148,7 @@ export default function DayDetail() {
             isTranslating={translating}
           />
 
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mt-6 mb-2">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mt-6 mb-2">
             Reference Answers
           </Text>
           <ReferenceAnswers
@@ -156,7 +156,7 @@ export default function DayDetail() {
             language={language}
           />
 
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mt-6 mb-2">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mt-6 mb-2">
             Practice
           </Text>
           <PracticeStudio

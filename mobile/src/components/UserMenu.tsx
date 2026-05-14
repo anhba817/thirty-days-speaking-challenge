@@ -39,7 +39,7 @@ export function UserMenu() {
     <>
       <Pressable
         onPress={() => ref.current?.present()}
-        className="bg-slate-800 rounded-full w-10 h-10 items-center justify-center active:opacity-80"
+        className="bg-blue-600 rounded-full w-10 h-10 items-center justify-center active:opacity-80"
       >
         <Text className="text-white font-semibold">{initial}</Text>
       </Pressable>
@@ -68,8 +68,8 @@ export function UserMenu() {
             onPress={handleSignOut}
             className="flex-row items-center bg-slate-800 rounded-2xl px-4 py-3 mt-6 active:opacity-80"
           >
-            <LogOut size={18} color="#fca5a5" />
-            <Text className="text-red-300 ml-3 font-semibold">Sign out</Text>
+            <LogOut size={18} color="#fda4af" />
+            <Text className="text-rose-300 ml-3 font-semibold">Sign out</Text>
           </Pressable>
         </BottomSheetView>
       </BottomSheetModal>

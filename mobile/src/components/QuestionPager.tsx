@@ -31,7 +31,7 @@ export function QuestionPager({ questions, index, onIndexChange }: Props) {
         {questions.map((q, i) => (
           <View key={i} style={{ width: itemWidth }}>
             <View className="bg-slate-900 rounded-2xl p-5 min-h-[140px]">
-              <Text className="text-slate-500 text-xs uppercase tracking-widest mb-3">
+              <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">
                 Question {i + 1} of {questions.length}
               </Text>
               <Text className="text-white text-lg leading-7">{q.text}</Text>
@@ -46,7 +46,7 @@ export function QuestionPager({ questions, index, onIndexChange }: Props) {
             <View
               key={i}
               className={`w-2 h-2 rounded-full mx-1 ${
-                i === index ? 'bg-emerald-500' : 'bg-slate-700'
+                i === index ? 'bg-blue-500' : 'bg-slate-700'
               }`}
             />
           ))}

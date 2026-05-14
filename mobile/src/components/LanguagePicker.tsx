@@ -59,7 +59,7 @@ export function LanguagePicker() {
         <BottomSheetView
           style={{ paddingHorizontal: 24, paddingVertical: 8 }}
         >
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mb-3">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">
             Learner language
           </Text>
           {LANGUAGES.map((l) => (
@@ -69,7 +69,7 @@ export function LanguagePicker() {
               className="flex-row items-center justify-between py-3 active:opacity-60"
             >
               <Text className="text-white text-base">{l}</Text>
-              {l === language && <Check size={20} color="#10b981" />}
+              {l === language && <Check size={20} color="#3b82f6" />}
             </Pressable>
           ))}
         </BottomSheetView>

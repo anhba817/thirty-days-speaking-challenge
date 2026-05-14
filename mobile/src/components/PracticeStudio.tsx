@@ -117,13 +117,13 @@ export function PracticeStudio({
           onPress={toggleRecord}
           disabled={submitting}
           className={`w-14 h-14 rounded-full items-center justify-center active:opacity-80 ${
-            recording.isRecording ? 'bg-red-500' : 'bg-emerald-500'
+            recording.isRecording ? 'bg-rose-500' : 'bg-blue-600'
           }`}
         >
           {recording.isRecording ? (
             <View className="w-5 h-5 bg-white rounded-sm" />
           ) : (
-            <Mic size={24} color="#0f172a" />
+            <Mic size={24} color="#fff" />
           )}
         </Pressable>
         <View className="flex-1 mx-3">
@@ -136,7 +136,7 @@ export function PracticeStudio({
 
       {audio && !recording.isRecording && (
         <View className="flex-row items-center justify-between mt-2 px-2">
-          <Text className="text-emerald-400 text-sm">
+          <Text className="text-blue-400 text-sm">
             ✓ Audio captured ({formatDuration(audio.durationMs)})
           </Text>
           <Pressable
@@ -149,7 +149,7 @@ export function PracticeStudio({
       )}
 
       {recording.error && (
-        <Text className="text-red-400 text-sm mt-3 text-center">
+        <Text className="text-rose-400 text-sm mt-3 text-center">
           {recording.error}
         </Text>
       )}
@@ -158,20 +158,20 @@ export function PracticeStudio({
         onPress={submit}
         disabled={!canSubmit}
         className={`rounded-full px-6 py-3 mt-4 items-center ${
-          !canSubmit ? 'bg-emerald-500/40' : 'bg-emerald-500 active:opacity-80'
+          !canSubmit ? 'bg-blue-600/40' : 'bg-blue-600 active:opacity-80'
         }`}
       >
         {submitting ? (
-          <ActivityIndicator color="#0f172a" />
+          <ActivityIndicator color="#fff" />
         ) : (
-          <Text className="text-slate-900 font-semibold">
+          <Text className="text-white font-semibold">
             Generate AI Analysis
           </Text>
         )}
       </Pressable>
 
       {error && (
-        <Text className="text-red-400 text-sm mt-3 text-center">{error}</Text>
+        <Text className="text-rose-400 text-sm mt-3 text-center">{error}</Text>
       )}
     </View>
   );

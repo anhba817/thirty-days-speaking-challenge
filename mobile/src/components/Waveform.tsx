@@ -50,7 +50,7 @@ function Bar({ delay, active }: { delay: number; active: boolean }) {
           height: BAR_HEIGHT,
           marginHorizontal: 2,
           borderRadius: 2,
-          backgroundColor: active ? '#10b981' : '#475569',
+          backgroundColor: active ? '#3b82f6' : '#475569',
         },
         style,
       ]}

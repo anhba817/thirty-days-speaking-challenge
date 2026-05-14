@@ -29,7 +29,7 @@ export default function Dashboard() {
       >
         <View className="flex-row items-center justify-between mt-4 mb-6">
           <View>
-            <Text className="text-slate-500 text-xs uppercase tracking-widest">
+            <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest">
               IELTS 30-Day
             </Text>
             <Text className="text-white text-2xl font-bold">
@@ -48,11 +48,11 @@ export default function Dashboard() {
         </View>
 
         <View className="bg-slate-900 rounded-2xl p-5 mb-8">
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
             Progress
           </Text>
           <View className="flex-row items-baseline">
-            <Text className="text-white text-4xl font-bold">
+            <Text className="text-blue-400 text-4xl font-bold">
               {completedDays.length}
             </Text>
             <Text className="text-slate-500 text-xl ml-1">/ 30</Text>
@@ -64,7 +64,7 @@ export default function Dashboard() {
 
         {sections.map(({ phase, days }) => (
           <View key={phase} className="mb-6">
-            <Text className="text-slate-500 text-xs uppercase tracking-widest mb-1">
+            <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">
               Phase {phase} · {PHASE_META[phase].range}
             </Text>
             <Text className="text-white text-lg font-semibold mb-3">

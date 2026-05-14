@@ -69,10 +69,10 @@ export function KeywordList({ keywords, translations, isTranslating }: Props) {
               <Text className="text-white text-2xl font-bold">
                 {selected.keyword.word}
               </Text>
-              <Text className="text-emerald-400 text-base mt-2">
+              <Text className="text-blue-400 text-base mt-2">
                 {selected.translation}
               </Text>
-              <Text className="text-slate-500 text-xs uppercase tracking-widest mt-6 mb-2">
+              <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mt-6 mb-2">
                 Example
               </Text>
               <Text className="text-slate-300 leading-6">

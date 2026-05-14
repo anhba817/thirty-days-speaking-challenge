@@ -69,12 +69,12 @@ export function ReferenceAnswers({ examples, language }: Props) {
             key={b}
             onPress={() => setBand(b)}
             className={`flex-1 py-2 rounded-full items-center ${
-              band === b ? 'bg-emerald-500' : ''
+              band === b ? 'bg-blue-600' : ''
             }`}
           >
             <Text
               className={`text-sm font-semibold ${
-                band === b ? 'text-slate-900' : 'text-slate-300'
+                band === b ? 'text-white' : 'text-slate-300'
               }`}
             >
               Band {b}
@@ -93,7 +93,7 @@ export function ReferenceAnswers({ examples, language }: Props) {
             onPress={() => openExplanation(example)}
             className="mt-3 self-start active:opacity-60"
           >
-            <Text className="text-emerald-400 text-sm font-semibold">
+            <Text className="text-blue-400 text-sm font-semibold">
               Why is this band {band}? →
             </Text>
           </Pressable>
@@ -110,15 +110,15 @@ export function ReferenceAnswers({ examples, language }: Props) {
         <BottomSheetScrollView
           contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }}
         >
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
             Why this works · {language}
           </Text>
           {activeLoading ? (
             <View className="py-10">
-              <ActivityIndicator color="#10b981" />
+              <ActivityIndicator color="#3b82f6" />
             </View>
           ) : error ? (
-            <Text className="text-red-400">{error}</Text>
+            <Text className="text-rose-400">{error}</Text>
           ) : (
             <Text className="text-slate-300 leading-7">
               {activeText ?? ''}

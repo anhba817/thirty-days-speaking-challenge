@@ -63,13 +63,13 @@ export default function FeedbackScreen() {
           <Text className="text-slate-400 ml-1">Back</Text>
         </Pressable>
 
-        <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+        <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
           Coach Report · Day {dayId}
         </Text>
 
         <View className="bg-slate-900 rounded-2xl p-6 mb-6">
           <View className="flex-row items-baseline">
-            <Text className="text-white text-6xl font-bold">
+            <Text className="text-blue-500 text-6xl font-bold">
               {feedback.score}
             </Text>
             <Text className="text-slate-500 text-3xl ml-2">/ 9</Text>
@@ -80,7 +80,7 @@ export default function FeedbackScreen() {
         </View>
 
         <View className="mb-6">
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mb-1">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">
             Question
           </Text>
           <Text className="text-slate-300 leading-6">{questionText}</Text>
@@ -92,7 +92,7 @@ export default function FeedbackScreen() {
           { label: 'Structure', text: feedback.structureFeedback },
         ].map((row) => (
           <View key={row.label} className="bg-slate-900 rounded-2xl p-5 mb-3">
-            <Text className="text-emerald-400 text-xs uppercase tracking-widest mb-2">
+            <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
               {row.label}
             </Text>
             <Text className="text-slate-300 leading-6">{row.text}</Text>
@@ -101,7 +101,7 @@ export default function FeedbackScreen() {
 
         {transcript ? (
           <View className="bg-slate-900 rounded-2xl p-5 mb-3">
-            <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+            <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
               Your answer
             </Text>
             <Text className="text-slate-300 leading-6 italic">
@@ -111,7 +111,7 @@ export default function FeedbackScreen() {
         ) : null}
 
         <View className="bg-slate-900 rounded-2xl p-5 mb-3">
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
             Band 8 sample
           </Text>
           <Text className="text-slate-300 leading-6">
@@ -120,7 +120,7 @@ export default function FeedbackScreen() {
         </View>
 
         <View className="bg-slate-900 rounded-2xl p-5 mb-6">
-          <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+          <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
             Vietnamese coach tips
           </Text>
           <Text className="text-slate-300 leading-6">
@@ -132,10 +132,10 @@ export default function FeedbackScreen() {
           onPress={finishDay}
           disabled={saving}
           className={`rounded-full px-6 py-3 items-center ${
-            saving ? 'bg-emerald-500/40' : 'bg-emerald-500 active:opacity-80'
+            saving ? 'bg-blue-600/40' : 'bg-blue-600 active:opacity-80'
           }`}
         >
-          <Text className="text-slate-900 font-semibold">
+          <Text className="text-white font-semibold">
             {saving ? 'Saving…' : 'Finish day challenge'}
           </Text>
         </Pressable>

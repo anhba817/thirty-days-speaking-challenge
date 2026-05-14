@@ -80,7 +80,7 @@ export function GoogleSignInButton() {
         )}
       </Pressable>
       {error && (
-        <Text className="text-red-400 text-xs mt-3 text-center">{error}</Text>
+        <Text className="text-rose-400 text-xs mt-3 text-center">{error}</Text>
       )}
     </View>
   );
