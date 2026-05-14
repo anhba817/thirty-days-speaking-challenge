@@ -21,7 +21,7 @@ interface Props {
   topicTitle: string;
   question: Question;
   keywords: string[];
-  onFeedback: (fb: FeedbackResponse) => void;
+  onFeedback: (fb: FeedbackResponse, userSpeech: string) => void;
 }
 
 function formatDuration(ms: number) {
@@ -79,7 +79,7 @@ export function PracticeStudio({
         audioBase64,
         audioMimeType: audioBase64 ? 'audio/m4a' : undefined,
       });
-      onFeedback(fb);
+      onFeedback(fb, text);
       setText('');
       setAudio(null);
     } catch {

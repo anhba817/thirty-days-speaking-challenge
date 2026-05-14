@@ -16,10 +16,8 @@ import { KeywordList } from '../../src/components/KeywordList';
 import { PracticeStudio } from '../../src/components/PracticeStudio';
 import { QuestionPager } from '../../src/components/QuestionPager';
 import { ReferenceAnswers } from '../../src/components/ReferenceAnswers';
-import {
-  translateKeywords,
-  type FeedbackResponse,
-} from '../../src/services/geminiService';
+import { translateKeywords } from '../../src/services/geminiService';
+import { useFeedback } from '../../src/state/FeedbackContext';
 
 const LANGUAGES = ['Vietnamese', 'Chinese', 'Japanese'] as const;
 type Language = (typeof LANGUAGES)[number];
@@ -37,8 +35,8 @@ export default function DayDetail() {
   const [language, setLanguage] = useState<Language>('Vietnamese');
   const [translations, setTranslations] = useState<string[]>([]);
   const [translating, setTranslating] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackResponse | null>(null);
   const translationCache = useRef<Map<string, string[]>>(new Map());
+  const { setPayload } = useFeedback();
 
   useEffect(() => {
     if (!day) return;
@@ -177,34 +175,18 @@ export default function DayDetail() {
             topicTitle={day.title}
             question={currentQuestion}
             keywords={day.keywords.map((k) => k.word)}
-            onFeedback={setFeedback}
+            onFeedback={(fb, userSpeech) => {
+              setPayload({
+                dayId: day.id,
+                questionIndex,
+                topicTitle: day.title,
+                questionText: currentQuestion.text,
+                userSpeech,
+                feedback: fb,
+              });
+              router.push('/feedback');
+            }}
           />
-
-          {feedback && (
-            <View className="bg-slate-900 rounded-2xl p-5 mt-6">
-              <Text className="text-slate-500 text-xs uppercase tracking-widest mb-2">
-                AI Feedback (Phase 6 routes this to a dedicated screen)
-              </Text>
-              <View className="flex-row items-baseline mb-3">
-                <Text className="text-white text-4xl font-bold">
-                  {feedback.score}
-                </Text>
-                <Text className="text-slate-500 text-xl ml-1">/ 9</Text>
-              </View>
-              <Text className="text-slate-300 leading-6 mb-2">
-                <Text className="text-slate-500">Fluency: </Text>
-                {feedback.fluencyFeedback}
-              </Text>
-              <Text className="text-slate-300 leading-6 mb-2">
-                <Text className="text-slate-500">Vocabulary: </Text>
-                {feedback.vocabularyFeedback}
-              </Text>
-              <Text className="text-slate-300 leading-6">
-                <Text className="text-slate-500">Structure: </Text>
-                {feedback.structureFeedback}
-              </Text>
-            </View>
-          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

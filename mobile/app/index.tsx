@@ -5,6 +5,7 @@ import { Link } from 'expo-router';
 import { useAuth } from '../src/auth/AuthContext';
 import { DayCard } from '../src/components/DayCard';
 import { CHALLENGE_DATA } from '../src/data/challenge';
+import { useProgress } from '../src/state/ProgressContext';
 
 const PHASE_META: Record<1 | 2 | 3, { name: string; range: string }> = {
   1: { name: 'Foundations', range: 'Days 1–10' },
@@ -14,7 +15,7 @@ const PHASE_META: Record<1 | 2 | 3, { name: string; range: string }> = {
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
-  const completedDays: number[] = []; // Phase 6 wires real progress
+  const { completedDays, isOnline, pendingCount } = useProgress();
 
   const sections = ([1, 2, 3] as const).map((phase) => ({
     phase,
@@ -68,6 +69,14 @@ export default function Dashboard() {
           <Text className="text-slate-400 text-sm mt-1">
             {30 - completedDays.length} days remaining
           </Text>
+          {(!isOnline || pendingCount > 0) && (
+            <View className="flex-row items-center mt-3">
+              <View className="w-2 h-2 rounded-full bg-amber-400 mr-2" />
+              <Text className="text-slate-400 text-xs">
+                {!isOnline ? 'Offline' : `${pendingCount} pending`}
+              </Text>
+            </View>
+          )}
         </View>
 
         {sections.map(({ phase, days }) => (

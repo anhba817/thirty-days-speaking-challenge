@@ -7,6 +7,8 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import type { ReactNode } from 'react';
 
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
+import { FeedbackProvider } from '../src/state/FeedbackContext';
+import { ProgressProvider } from '../src/state/ProgressContext';
 import '../global.css';
 
 function InitGate({ children }: { children: ReactNode }) {
@@ -28,9 +30,13 @@ export default function RootLayout() {
         <BottomSheetModalProvider>
           <StatusBar style="light" />
           <AuthProvider>
-            <InitGate>
-              <Stack screenOptions={{ headerShown: false }} />
-            </InitGate>
+            <ProgressProvider>
+              <FeedbackProvider>
+                <InitGate>
+                  <Stack screenOptions={{ headerShown: false }} />
+                </InitGate>
+              </FeedbackProvider>
+            </ProgressProvider>
           </AuthProvider>
         </BottomSheetModalProvider>
       </SafeAreaProvider>
