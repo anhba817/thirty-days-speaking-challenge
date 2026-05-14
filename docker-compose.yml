@@ -1,0 +1,24 @@
+# Backend-only deployment. Requires an external Postgres reachable via
+# DATABASE_URL. Compose interpolates ${VAR} from the shell or repo-root .env
+# at `docker compose` time. See .env.example.
+#
+#   docker compose up -d
+
+services:
+  backend:
+    build:
+      context: ./backend
+    image: ielts-backend
+    container_name: ielts-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
+      GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?GEMINI_API_KEY is required}
+      GEMINI_TIMEOUT_MS: ${GEMINI_TIMEOUT_MS:-30000}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      PORT: 3001
