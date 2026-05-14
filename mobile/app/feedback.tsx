@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 
@@ -10,22 +9,20 @@ import { useProgress } from '../src/state/ProgressContext';
 export default function FeedbackScreen() {
   const router = useRouter();
   const { payload, setPayload } = useFeedback();
-  const { completeDay, saveAttempt, isOnline, pendingCount } = useProgress();
+  const { completeDay, saveAttempt } = useProgress();
   const [saving, setSaving] = useState(false);
 
   if (!payload) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-950">
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-slate-400 mb-4">No feedback to display.</Text>
-          <Pressable
-            onPress={() => router.replace('/')}
-            className="bg-slate-800 rounded-full px-6 py-2 active:opacity-80"
-          >
-            <Text className="text-white">Back to dashboard</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <View className="flex-1 bg-slate-950 items-center justify-center px-6">
+        <Text className="text-slate-400 mb-4">No feedback to display.</Text>
+        <Pressable
+          onPress={() => router.replace('/')}
+          className="bg-slate-800 rounded-full px-6 py-2 active:opacity-80"
+        >
+          <Text className="text-white">Back to dashboard</Text>
+        </Pressable>
+      </View>
     );
   }
 
@@ -56,7 +53,7 @@ export default function FeedbackScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-slate-950">
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <Pressable
           onPress={() => router.back()}
@@ -131,18 +128,6 @@ export default function FeedbackScreen() {
           </Text>
         </View>
 
-        {(!isOnline || pendingCount > 0) && (
-          <View className="bg-slate-900 rounded-xl px-4 py-3 mb-3 flex-row items-center">
-            <View className="w-2 h-2 rounded-full bg-amber-400 mr-2" />
-            <Text className="text-slate-300 text-sm flex-1">
-              {!isOnline ? 'Offline · ' : ''}
-              {pendingCount > 0
-                ? `${pendingCount} write${pendingCount === 1 ? '' : 's'} queued, will retry automatically.`
-                : 'Progress will sync when reconnected.'}
-            </Text>
-          </View>
-        )}
-
         <Pressable
           onPress={finishDay}
           disabled={saving}
@@ -165,6 +150,6 @@ export default function FeedbackScreen() {
           <Text className="text-slate-400 text-sm">Try another question</Text>
         </Pressable>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

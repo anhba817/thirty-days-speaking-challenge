@@ -7,20 +7,18 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 
 import { CHALLENGE_DATA } from '../../src/data/challenge';
 import { KeywordList } from '../../src/components/KeywordList';
+import { LanguagePicker } from '../../src/components/LanguagePicker';
 import { PracticeStudio } from '../../src/components/PracticeStudio';
 import { QuestionPager } from '../../src/components/QuestionPager';
 import { ReferenceAnswers } from '../../src/components/ReferenceAnswers';
 import { translateKeywords } from '../../src/services/geminiService';
 import { useFeedback } from '../../src/state/FeedbackContext';
-
-const LANGUAGES = ['Vietnamese', 'Chinese', 'Japanese'] as const;
-type Language = (typeof LANGUAGES)[number];
+import { useLanguage } from '../../src/state/LanguageContext';
 
 export default function DayDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,7 +30,7 @@ export default function DayDetail() {
   );
 
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [language, setLanguage] = useState<Language>('Vietnamese');
+  const { language } = useLanguage();
   const [translations, setTranslations] = useState<string[]>([]);
   const [translating, setTranslating] = useState(false);
   const translationCache = useRef<Map<string, string[]>>(new Map());
@@ -76,21 +74,16 @@ export default function DayDetail() {
 
   if (!day) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-950">
+      <View className="flex-1 bg-slate-950">
         <Text className="text-slate-400 m-6">Day {dayId} not found.</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const currentQuestion = day.questions[questionIndex] ?? day.questions[0];
 
-  const cycleLanguage = () => {
-    const i = LANGUAGES.indexOf(language);
-    setLanguage(LANGUAGES[(i + 1) % LANGUAGES.length]);
-  };
-
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-slate-950">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
@@ -110,12 +103,7 @@ export default function DayDetail() {
               <ChevronLeft size={20} color="#94a3b8" />
               <Text className="text-slate-400 ml-1">Back</Text>
             </Pressable>
-            <Pressable
-              onPress={cycleLanguage}
-              className="bg-slate-800 rounded-full px-3 py-1 active:opacity-80"
-            >
-              <Text className="text-slate-300 text-xs">{language}</Text>
-            </Pressable>
+            <LanguagePicker />
           </View>
 
           <Text className="text-slate-500 text-xs uppercase tracking-widest mb-1">
@@ -189,6 +177,6 @@ export default function DayDetail() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
