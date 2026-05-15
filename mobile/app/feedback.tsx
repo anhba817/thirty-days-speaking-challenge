@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Play, Pause } from 'lucide-react-native';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
 import { useFeedback } from '../src/state/FeedbackContext';
 import { useProgress } from '../src/state/ProgressContext';
@@ -11,6 +12,15 @@ export default function FeedbackScreen() {
   const { payload, setPayload } = useFeedback();
   const { completeDay, saveAttempt } = useProgress();
   const [saving, setSaving] = useState(false);
+
+  const player = useAudioPlayer(payload?.audioUri ?? null);
+  const playerStatus = useAudioPlayerStatus(player);
+
+  useEffect(() => {
+    return () => {
+      player.pause();
+    };
+  }, [player]);
 
   if (!payload) {
     return (
@@ -32,13 +42,17 @@ export default function FeedbackScreen() {
   const finishDay = async () => {
     setSaving(true);
     try {
-      await saveAttempt({
-        dayId,
-        questionIx: questionIndex,
-        transcript: transcript || undefined,
-        feedback,
-        score: feedback.score,
-      });
+      // If the attempt (and its audio) was already saved at submit-time in
+      // PracticeStudio, don't double-save here.
+      if (!payload.savedAttemptId) {
+        await saveAttempt({
+          dayId,
+          questionIx: questionIndex,
+          transcript: transcript || undefined,
+          feedback,
+          score: feedback.score,
+        });
+      }
       await completeDay(dayId);
       setPayload(null);
       router.replace('/');
@@ -49,6 +63,20 @@ export default function FeedbackScreen() {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const togglePlay = () => {
+    if (playerStatus.playing) {
+      player.pause();
+    } else {
+      if (
+        playerStatus.duration &&
+        playerStatus.currentTime >= playerStatus.duration
+      ) {
+        player.seekTo(0);
+      }
+      player.play();
     }
   };
 
@@ -78,6 +106,31 @@ export default function FeedbackScreen() {
             IELTS band estimate
           </Text>
         </View>
+
+        {payload.audioUri ? (
+          <View className="bg-slate-900 rounded-2xl p-5 mb-6 flex-row items-center">
+            <Pressable
+              onPress={togglePlay}
+              className="w-12 h-12 rounded-full bg-blue-600 items-center justify-center active:opacity-80"
+            >
+              {playerStatus.playing ? (
+                <Pause size={20} color="#fff" />
+              ) : (
+                <Play size={20} color="#fff" />
+              )}
+            </Pressable>
+            <View className="ml-4 flex-1">
+              <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest">
+                Replay your take
+              </Text>
+              <Text className="text-slate-400 text-xs mt-1">
+                {payload.savedAttemptId
+                  ? 'Saved — also available from this day’s history.'
+                  : 'Local replay only — sign in to save recordings.'}
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         <View className="mb-6">
           <Text className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">

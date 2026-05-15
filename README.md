@@ -143,6 +143,12 @@ variable is missing or malformed.
 | `GEMINI_TIMEOUT_MS` | no | default 30000, min 1000 |
 | `PORT` | no | default 3001 |
 | `FRONTEND_ORIGIN` | no | default `http://localhost:3000`; used by CORS |
+| `AWS_REGION` | yes | S3 bucket region (e.g. `us-east-1`) |
+| `AWS_S3_BUCKET` | yes | bucket name for recorded attempt audio |
+| `AWS_ACCESS_KEY_ID` | yes | IAM key with `s3:PutObject` + `s3:GetObject` on the bucket |
+| `AWS_SECRET_ACCESS_KEY` | yes | matching secret |
+| `AWS_S3_AUDIO_PREFIX` | no | key prefix; default `attempts/` |
+| `AWS_S3_PRESIGN_EXPIRES_SEC` | no | presigned URL TTL; default 900s |
 
 ### Frontend (`frontend/.env`)
 
@@ -196,7 +202,60 @@ All non-auth routes (except `POST /api/auth/google`) require
 | POST | `/api/gemini/translate-keywords` | Translate the day's keywords into the learner's language |
 | GET  | `/api/progress` | Completed days + recent attempts |
 | POST | `/api/progress/days/:dayId` | Mark a day complete |
-| POST | `/api/progress/attempts` | Persist a Gemini feedback attempt |
+| POST | `/api/progress/attempts` | Persist a Gemini feedback attempt. Include `audioBase64` + `audioMimeType` and the backend uploads the audio to S3. |
+| GET  | `/api/progress/attempts/:id/audio` | Returns a presigned `GET` URL for replaying that attempt's recording |
 | POST | `/api/progress/merge` | Bulk-import anonymous completed days on first sign-in |
 
 Rate limit: 20 req/min/IP (NestJS Throttler, global guard).
+
+## Audio storage (S3)
+
+When a learner submits a recorded answer, the client sends the audio (base64
+in the `POST /api/progress/attempts` JSON body) and the backend uploads it
+to S3 server-side using its IAM credentials. For replay, the backend issues a
+short-lived presigned `GET` URL via `GET /api/progress/attempts/:id/audio` —
+the client plays directly from S3 over that URL.
+
+The JSON body limit is 15 MB (set in `src/main.ts`), and the DTO caps
+`audioBase64` at ~15 MB encoded (~11 MB raw audio). Plenty for IELTS-length
+speaking answers.
+
+### Required bucket setup
+
+1. Create a private S3 bucket in your `AWS_REGION`. Block all public access.
+2. Create an IAM user / role with this minimum policy (replace `BUCKET`):
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Action": ["s3:PutObject", "s3:GetObject"],
+       "Resource": "arn:aws:s3:::BUCKET/attempts/*"
+     }]
+   }
+   ```
+
+3. (Optional) Configure CORS only for `GET` so browsers can fetch presigned
+   replay URLs:
+
+   ```json
+   [{
+     "AllowedHeaders": ["*"],
+     "AllowedMethods": ["GET"],
+     "AllowedOrigins": [
+       "http://localhost:3000",
+       "https://your.production.domain"
+     ],
+     "MaxAgeSeconds": 3000
+   }]
+   ```
+
+   Uploads go through the backend and never hit S3 from the browser, so `PUT`
+   does not need a CORS allowance.
+
+Objects are stored at `attempts/<userId>/<attemptId>.<ext>` (prefix configurable
+via `AWS_S3_AUDIO_PREFIX`). Lifecycle/expiration is up to you; the backend never
+deletes audio. When a user is deleted, their `Attempt` rows are cascade-removed
+but their S3 objects remain — wire up a lifecycle rule if you need automatic
+cleanup.

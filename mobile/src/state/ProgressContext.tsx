@@ -15,6 +15,8 @@ import { useAuth } from '../auth/AuthContext';
 import {
   fetchProgress,
   mergeCompletedDays,
+  saveAttempt as saveAttemptApi,
+  type Attempt,
 } from '../services/progressService';
 import {
   clearQueue,
@@ -32,9 +34,21 @@ function genId() {
 
 interface ProgressContextValue {
   completedDays: number[];
+  attempts: Attempt[];
   isComplete: (dayId: number) => boolean;
   completeDay: (dayId: number) => Promise<void>;
   saveAttempt: (input: SaveAttemptInput) => Promise<void>;
+  /**
+   * Save an attempt inline (no queueing) with audio bytes — backend uploads
+   * to S3. Used at "Generate AI Analysis" submit time when audio is present
+   * and the user is online; the queue path stays text-only because base64
+   * audio in AsyncStorage would bloat it.
+   */
+  saveAttemptWithAudio: (
+    input: SaveAttemptInput,
+    audioBase64: string,
+    audioMimeType: string,
+  ) => Promise<Attempt>;
   pendingCount: number;
   isOnline: boolean;
 }
@@ -44,6 +58,7 @@ const Ctx = createContext<ProgressContextValue | null>(null);
 export function ProgressProvider({ children }: { children: ReactNode }) {
   const { user, token } = useAuth();
   const [completedDays, setCompletedDays] = useState<number[]>([]);
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
   const previousUserIdRef = useRef<string | null>(null);
@@ -99,6 +114,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         try {
           const progress = await fetchProgress(token);
           setCompletedDays(progress.completedDays);
+          setAttempts(progress.attempts);
         } catch {
           // ignore
         }
@@ -176,13 +192,35 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     [token],
   );
 
+  const saveAttemptWithAudio = useCallback(
+    async (
+      input: SaveAttemptInput,
+      audioBase64: string,
+      audioMimeType: string,
+    ): Promise<Attempt> => {
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      const { attempt } = await saveAttemptApi(token, {
+        ...input,
+        audioMimeType,
+        audioBase64,
+      });
+      setAttempts((prev) => [attempt, ...prev]);
+      return attempt;
+    },
+    [token],
+  );
+
   return (
     <Ctx.Provider
       value={{
         completedDays,
+        attempts,
         isComplete: (id) => completedDays.includes(id),
         completeDay,
         saveAttempt,
+        saveAttemptWithAudio,
         pendingCount,
         isOnline,
       }}

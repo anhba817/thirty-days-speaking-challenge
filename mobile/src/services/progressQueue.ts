@@ -52,6 +52,8 @@ async function executeWrite(
   if (write.type === 'complete-day') {
     await markDayComplete(token, write.dayId);
   } else {
+    // Queue path never carries audio: by the time we drain, the local file
+    // URI may be gone, so audio uploads only happen inline at submit time.
     await saveAttemptApi(token, write.payload);
   }
 }

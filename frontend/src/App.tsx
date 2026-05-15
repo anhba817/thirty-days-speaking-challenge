@@ -29,10 +29,26 @@ import { useAuth } from './auth/AuthContext';
 import { UserMenu } from './auth/UserMenu';
 import {
   fetchProgress,
+  getAttemptAudioUrl,
   markDayComplete,
   mergeCompletedDays,
   saveAttempt,
+  type Attempt,
 } from './services/progressService';
+
+const RECORDING_MIME_TYPE = 'audio/webm';
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1] ?? '');
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
 
 const PROGRESS_STORAGE_KEY = 'ielts-30-day-progress';
 
@@ -48,7 +64,11 @@ export default function App() {
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [userAnswer, setUserAnswer] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBase64, setAudioBase64] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const [pastAttempts, setPastAttempts] = useState<Attempt[]>([]);
+  const [replayUrls, setReplayUrls] = useState<Record<string, string>>({});
+  const [loadingReplayId, setLoadingReplayId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackResponse | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -87,13 +107,28 @@ export default function App() {
         : fetchProgress(token);
 
       load
-        .then((data) => setCompletedDays(data.completedDays))
+        .then((data) => {
+          setCompletedDays(data.completedDays);
+          setPastAttempts(data.attempts);
+        })
         .catch((err) => console.error('Failed to load progress', err));
     } else {
       const saved = localStorage.getItem(PROGRESS_STORAGE_KEY);
       setCompletedDays(saved ? JSON.parse(saved) : []);
+      setPastAttempts([]);
     }
   }, [authReady, user, token]);
+
+  // Revoke object URLs when we unmount or swap blobs to avoid leaks.
+  useEffect(() => {
+    if (!audioBlob) {
+      setRecordedAudioUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(audioBlob);
+    setRecordedAudioUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [audioBlob]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -122,15 +157,16 @@ export default function App() {
   };
 
   const handleFeedback = async () => {
-    if ((!userAnswer && !audioBase64) || !selectedDay) return;
+    if ((!userAnswer && !audioBlob) || !selectedDay) return;
     setLoadingFeedback(true);
     try {
+      const audioBase64 = audioBlob ? await blobToBase64(audioBlob) : undefined;
       const res = await getSpeakingFeedback(
         selectedDay.title,
         selectedDay.questions[currentQuestionIndex].text,
         userAnswer,
         selectedDay.keywords.map(k => k.word),
-        audioBase64 || undefined
+        audioBase64,
       );
       setFeedback(res);
       saveProgress(selectedDay.id);
@@ -141,12 +177,33 @@ export default function App() {
           transcript: res.userTranscript ?? userAnswer,
           feedback: res,
           score: res.score,
-        }).catch((err) => console.error('Failed to save attempt', err));
+          audioMimeType: audioBase64 ? RECORDING_MIME_TYPE : undefined,
+          audioBase64,
+        })
+          .then(({ attempt }) => {
+            setPastAttempts((prev) => [attempt, ...prev]);
+          })
+          .catch((err) => console.error('Failed to save attempt', err));
       }
     } catch (err) {
       alert("AI was a bit busy. Please try again.");
     } finally {
       setLoadingFeedback(false);
+    }
+  };
+
+  const playPastAttempt = async (attempt: Attempt) => {
+    if (!token || !attempt.hasAudio) return;
+    if (replayUrls[attempt.id]) return;
+    setLoadingReplayId(attempt.id);
+    try {
+      const { url } = await getAttemptAudioUrl(token, attempt.id);
+      setReplayUrls((prev) => ({ ...prev, [attempt.id]: url }));
+    } catch (err) {
+      console.error('Failed to load replay url', err);
+      alert('Could not load this recording. Try again.');
+    } finally {
+      setLoadingReplayId(null);
     }
   };
 
@@ -172,23 +229,15 @@ export default function App() {
         };
 
         mediaRecorder.onstop = async () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = () => {
-            const base64String = (reader.result as string).split(',')[1];
-            setAudioBase64(base64String);
-            // Optionally, you could try to trigger transcription here if you wanted immediate text
-            setUserAnswer("(Audio recorded - ready for analysis)");
-          };
-          
-          // Stop all tracks to release the microphone
+          const blob = new Blob(audioChunksRef.current, { type: RECORDING_MIME_TYPE });
+          setAudioBlob(blob);
+          setUserAnswer("(Audio recorded - ready for analysis)");
           stream.getTracks().forEach(track => track.stop());
         };
 
         mediaRecorder.start();
         setIsRecording(true);
-        setAudioBase64(null);
+        setAudioBlob(null);
       } catch (err) {
         console.error("Error accessing microphone:", err);
         alert("Could not access microphone. Please check permissions.");
@@ -199,7 +248,7 @@ export default function App() {
   const resetPractice = () => {
     setUserAnswer('');
     setFeedback(null);
-    setAudioBase64(null);
+    setAudioBlob(null);
   };
 
   const handleShowExplanation = async (example: string, index: number) => {
@@ -566,6 +615,19 @@ export default function App() {
                             {isRecording ? <MicOff size={28} /> : <Mic size={28} />}
                           </motion.button>
                         </div>
+
+                        {recordedAudioUrl && !isRecording && (
+                          <div className="w-full flex flex-col items-center gap-2">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400">
+                              Review Your Take
+                            </p>
+                            <audio
+                              src={recordedAudioUrl}
+                              controls
+                              className="w-full max-w-md rounded-xl"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
@@ -574,7 +636,7 @@ export default function App() {
                            <p className="text-[10px] font-bold uppercase tracking-widest">AI Analysis Ready</p>
                         </div>
                         <button
-                          disabled={(!userAnswer && !audioBase64) || loadingFeedback}
+                          disabled={(!userAnswer && !audioBlob) || loadingFeedback}
                           onClick={handleFeedback}
                           className="w-full md:w-auto flex items-center justify-center space-x-3 px-10 py-5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed glow-blue transition-all group"
                         >
@@ -671,6 +733,61 @@ export default function App() {
                               </div>
                             ))}
                          </div>
+                      </div>
+                    )}
+
+                    {user && pastAttempts.some(
+                      (a) =>
+                        a.dayId === selectedDay.id &&
+                        a.questionIx === currentQuestionIndex &&
+                        a.hasAudio,
+                    ) && (
+                      <div className="glass rounded-[2.5rem] p-8 space-y-4 border-white/5">
+                        <h4 className="font-bold text-[10px] uppercase tracking-[0.3em] text-slate-500">
+                          Your Past Recordings
+                        </h4>
+                        <ul className="space-y-3">
+                          {pastAttempts
+                            .filter(
+                              (a) =>
+                                a.dayId === selectedDay.id &&
+                                a.questionIx === currentQuestionIndex &&
+                                a.hasAudio,
+                            )
+                            .map((a) => (
+                              <li
+                                key={a.id}
+                                className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs text-app-muted font-mono uppercase tracking-widest">
+                                    {new Date(a.createdAt).toLocaleString()}
+                                  </p>
+                                  <p className="text-xs text-app-muted mt-1">
+                                    Band {a.score.toFixed(1)}
+                                  </p>
+                                </div>
+                                {replayUrls[a.id] ? (
+                                  <audio
+                                    src={replayUrls[a.id]}
+                                    controls
+                                    className="h-10"
+                                  />
+                                ) : (
+                                  <button
+                                    onClick={() => playPastAttempt(a)}
+                                    disabled={loadingReplayId === a.id}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest hover:bg-blue-500/20 disabled:opacity-40"
+                                  >
+                                    <Play size={12} />
+                                    <span>
+                                      {loadingReplayId === a.id ? 'Loading…' : 'Replay'}
+                                    </span>
+                                  </button>
+                                )}
+                              </li>
+                            ))}
+                        </ul>
                       </div>
                     )}
 

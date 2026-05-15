@@ -37,6 +37,14 @@ export class ProgressController {
     return this.progress.saveAttempt(user.id, body);
   }
 
+  @Get('attempts/:id/audio')
+  getAttemptAudio(
+    @CurrentUser() user: AuthUser,
+    @Param('id') attemptId: string,
+  ) {
+    return this.progress.getAttemptAudioUrl(user.id, attemptId);
+  }
+
   @Post('merge')
   merge(@CurrentUser() user: AuthUser, @Body() body: MergeProgressDto) {
     return this.progress.mergeCompletedDays(user.id, body.dayIds);

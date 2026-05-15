@@ -14,14 +14,28 @@ import {
   type FeedbackResponse,
 } from '../services/geminiService';
 import { useRecording } from '../hooks/useRecording';
+import { useAuth } from '../auth/AuthContext';
+import { useProgress } from '../state/ProgressContext';
 import { Waveform } from './Waveform';
 import type { Question } from '../data/challenge';
 
+const RECORDING_MIME_TYPE = 'audio/m4a';
+
+interface SubmitArgs {
+  feedback: FeedbackResponse;
+  userSpeech: string;
+  audioUri?: string;
+  audioMimeType?: string;
+  savedAttemptId?: string;
+}
+
 interface Props {
+  dayId: number;
+  questionIndex: number;
   topicTitle: string;
   question: Question;
   keywords: string[];
-  onFeedback: (fb: FeedbackResponse, userSpeech: string) => void;
+  onFeedback: (args: SubmitArgs) => void;
 }
 
 function formatDuration(ms: number) {
@@ -32,6 +46,8 @@ function formatDuration(ms: number) {
 }
 
 export function PracticeStudio({
+  dayId,
+  questionIndex,
   topicTitle,
   question,
   keywords,
@@ -46,6 +62,8 @@ export function PracticeStudio({
   const [error, setError] = useState<string | null>(null);
 
   const recording = useRecording();
+  const { user } = useAuth();
+  const { saveAttemptWithAudio, isOnline } = useProgress();
   const canSubmit = (!!audio || text.trim().length > 0) && !submitting;
 
   const toggleRecord = async () => {
@@ -77,9 +95,39 @@ export function PracticeStudio({
         userSpeech: text,
         keywords,
         audioBase64,
-        audioMimeType: audioBase64 ? 'audio/m4a' : undefined,
+        audioMimeType: audioBase64 ? RECORDING_MIME_TYPE : undefined,
       });
-      onFeedback(fb, text);
+
+      let savedAttemptId: string | undefined;
+      // Persist the attempt + send audio bytes inline at submit time when
+      // signed-in + online + has audio. Backend uploads to S3. Queue path
+      // stays text-only to keep AsyncStorage small.
+      if (audio && audioBase64 && user && isOnline) {
+        try {
+          const attempt = await saveAttemptWithAudio(
+            {
+              dayId,
+              questionIx: questionIndex,
+              transcript: fb.userTranscript ?? (text || undefined),
+              feedback: fb,
+              score: fb.score,
+            },
+            audioBase64,
+            RECORDING_MIME_TYPE,
+          );
+          savedAttemptId = attempt.id;
+        } catch (e) {
+          console.warn('Failed to save attempt with audio', e);
+        }
+      }
+
+      onFeedback({
+        feedback: fb,
+        userSpeech: text,
+        audioUri: audio?.uri,
+        audioMimeType: audio ? RECORDING_MIME_TYPE : undefined,
+        savedAttemptId,
+      });
       setText('');
       setAudio(null);
     } catch {

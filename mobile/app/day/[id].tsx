@@ -13,6 +13,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { CHALLENGE_DATA } from '../../src/data/challenge';
 import { KeywordList } from '../../src/components/KeywordList';
 import { LanguagePicker } from '../../src/components/LanguagePicker';
+import { PastRecordings } from '../../src/components/PastRecordings';
 import { PracticeStudio } from '../../src/components/PracticeStudio';
 import { QuestionPager } from '../../src/components/QuestionPager';
 import { ReferenceAnswers } from '../../src/components/ReferenceAnswers';
@@ -160,21 +161,34 @@ export default function DayDetail() {
             Practice
           </Text>
           <PracticeStudio
+            dayId={day.id}
+            questionIndex={questionIndex}
             topicTitle={day.title}
             question={currentQuestion}
             keywords={day.keywords.map((k) => k.word)}
-            onFeedback={(fb, userSpeech) => {
+            onFeedback={({
+              feedback,
+              userSpeech,
+              audioUri,
+              audioMimeType,
+              savedAttemptId,
+            }) => {
               setPayload({
                 dayId: day.id,
                 questionIndex,
                 topicTitle: day.title,
                 questionText: currentQuestion.text,
                 userSpeech,
-                feedback: fb,
+                feedback,
+                audioUri,
+                audioMimeType,
+                savedAttemptId,
               });
               router.push('/feedback');
             }}
           />
+
+          <PastRecordings dayId={day.id} questionIndex={questionIndex} />
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
