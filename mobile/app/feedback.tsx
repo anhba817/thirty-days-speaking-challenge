@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Play, Pause } from 'lucide-react-native';
@@ -13,14 +13,11 @@ export default function FeedbackScreen() {
   const { completeDay, saveAttempt } = useProgress();
   const [saving, setSaving] = useState(false);
 
+  // useAudioPlayer auto-releases on unmount; don't manually pause in a
+  // cleanup — by the time it runs the native player may already be gone,
+  // crashing with "Cannot use shared object that was already released".
   const player = useAudioPlayer(payload?.audioUri ?? null);
   const playerStatus = useAudioPlayerStatus(player);
-
-  useEffect(() => {
-    return () => {
-      player.pause();
-    };
-  }, [player]);
 
   if (!payload) {
     return (
@@ -67,16 +64,20 @@ export default function FeedbackScreen() {
   };
 
   const togglePlay = () => {
-    if (playerStatus.playing) {
-      player.pause();
-    } else {
-      if (
-        playerStatus.duration &&
-        playerStatus.currentTime >= playerStatus.duration
-      ) {
-        player.seekTo(0);
+    try {
+      if (playerStatus.playing) {
+        player.pause();
+      } else {
+        if (
+          playerStatus.duration &&
+          playerStatus.currentTime >= playerStatus.duration
+        ) {
+          player.seekTo(0);
+        }
+        player.play();
       }
-      player.play();
+    } catch (e) {
+      console.warn('AudioPlayer call ignored:', e);
     }
   };
 

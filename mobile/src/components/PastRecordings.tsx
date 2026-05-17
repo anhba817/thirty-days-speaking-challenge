@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Play, Pause } from 'lucide-react-native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -15,17 +15,13 @@ interface Props {
 export function PastRecordings({ dayId, questionIndex }: Props) {
   const { token, user } = useAuth();
   const { attempts } = useProgress();
-  const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const player = useAudioPlayer(activeUrl);
+  // Use a single stable player and swap sources imperatively. Passing a
+  // changing source to useAudioPlayer can release the underlying native
+  // player out from under us; .replace() keeps the same instance.
+  const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
-
-  useEffect(() => {
-    return () => {
-      player.pause();
-    };
-  }, [player]);
 
   const items = attempts.filter(
     (a) => a.dayId === dayId && a.questionIx === questionIndex && a.hasAudio,
@@ -33,15 +29,24 @@ export function PastRecordings({ dayId, questionIndex }: Props) {
 
   if (!user || !token || items.length === 0) return null;
 
+  const safe = (fn: () => void) => {
+    try {
+      fn();
+    } catch (e) {
+      // Player may have been released (e.g. component unmounting). Swallow.
+      console.warn('AudioPlayer call ignored:', e);
+    }
+  };
+
   const toggle = async (attemptId: string) => {
     if (activeId === attemptId) {
       if (status.playing) {
-        player.pause();
+        safe(() => player.pause());
       } else {
         if (status.duration && status.currentTime >= status.duration) {
-          player.seekTo(0);
+          safe(() => player.seekTo(0));
         }
-        player.play();
+        safe(() => player.play());
       }
       return;
     }
@@ -49,10 +54,9 @@ export function PastRecordings({ dayId, questionIndex }: Props) {
     setLoadingId(attemptId);
     try {
       const { url } = await getAttemptAudioUrl(token, attemptId);
+      safe(() => player.replace({ uri: url }));
       setActiveId(attemptId);
-      setActiveUrl(url);
-      // The player will load when activeUrl updates; play after a tick.
-      setTimeout(() => player.play(), 100);
+      safe(() => player.play());
     } catch (e) {
       console.warn('Failed to load recording', e);
     } finally {
