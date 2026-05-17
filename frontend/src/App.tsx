@@ -13,7 +13,7 @@ import {
   Mic, 
   MicOff, 
   BookOpen, 
-  Trophy, 
+  Mic2, 
   ArrowLeft,
   Sparkles,
   Play,
@@ -301,7 +301,7 @@ export default function App() {
       <header className="sticky top-0 z-50 glass px-8 py-4 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setView('dashboard')}>
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white glow-blue">
-            <Trophy size={20} />
+            <Mic2 size={20} />
           </div>
           <div>
             <h1 className="font-bold text-lg leading-tight tracking-tight text-app-heading">IELTS 30-Day</h1>
