@@ -56,7 +56,20 @@
           "iosUrlScheme": "com.googleusercontent.apps.186810620101-8iib9j3ahits3e5att1pdf1gkbh8lgko"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0",
+            "kotlinVersion": "2.1.20",
+            "enableProguardInReleaseBuilds": false,
+            "enableShrinkResourcesInReleaseBuilds": false
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},
