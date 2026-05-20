@@ -1,10 +1,18 @@
+import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { GoogleSignInButton } from '../src/auth/GoogleSignInButton';
+import { useAuth } from '../src/auth/AuthContext';
 
 export default function SignInScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) router.replace('/');
+  }, [user, router]);
+
   return (
     <View className="flex-1 bg-slate-950 px-6 justify-center">
       <Text className="text-white text-4xl font-bold text-center mb-3">

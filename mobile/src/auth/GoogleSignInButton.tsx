@@ -58,7 +58,8 @@ export function GoogleSignInButton() {
         return;
       }
       console.error('Google sign-in failed', err);
-      setError('Sign-in failed. Please try again.');
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`Sign-in failed: ${message}`);
     } finally {
       setLoading(false);
     }
