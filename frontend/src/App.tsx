@@ -28,6 +28,7 @@ import { getSpeakingFeedback, FeedbackResponse, getExampleExplanation, translate
 import { useAuth } from './auth/AuthContext';
 import { UserMenu } from './auth/UserMenu';
 import { LegalPage } from './legal/LegalPage';
+import { AccountDeletionPage } from './legal/AccountDeletionPage';
 import {
   fetchProgress,
   getAttemptAudioUrl,
@@ -54,17 +55,25 @@ function blobToBase64(blob: Blob): Promise<string> {
 const PROGRESS_STORAGE_KEY = 'ielts-30-day-progress';
 
 // --- Types ---
-type AppState = 'dashboard' | 'day-detail' | 'feedback' | 'privacy' | 'terms';
+type AppState =
+  | 'dashboard'
+  | 'day-detail'
+  | 'feedback'
+  | 'privacy'
+  | 'terms'
+  | 'delete-account';
 
 // --- Path-based routing for the standalone legal pages ---
 // These are the only views with their own URL (e.g. https://domain/privacy);
 // every other view lives under "/". Used so the privacy/terms pages can be
 // linked to directly (e.g. from the Google Play Data Safety form).
-const LEGAL_PATHS: Record<string, 'privacy' | 'terms'> = {
+const STANDALONE_PATHS: Record<string, AppState> = {
   '/privacy': 'privacy',
   '/terms': 'terms',
+  '/delete-account': 'delete-account',
 };
-const pathToView = (pathname: string): AppState => LEGAL_PATHS[pathname] ?? 'dashboard';
+const pathToView = (pathname: string): AppState =>
+  STANDALONE_PATHS[pathname] ?? 'dashboard';
 
 // --- Utils ---
 const cn = (...classes: string[]) => classes.filter(Boolean).join(' ');
@@ -108,12 +117,13 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // Open a legal page at its own URL (e.g. /privacy) so it can be deep-linked.
-  const openLegal = (doc: 'privacy' | 'terms') => {
-    if (window.location.pathname !== `/${doc}`) {
-      window.history.pushState({}, '', `/${doc}`);
+  // Open a standalone page at its own URL (e.g. /privacy) so it can be
+  // deep-linked (used by footer links and the Google Play Data Safety form).
+  const openStandalone = (page: 'privacy' | 'terms' | 'delete-account') => {
+    if (window.location.pathname !== `/${page}`) {
+      window.history.pushState({}, '', `/${page}`);
     }
-    setView(doc);
+    setView(page);
     window.scrollTo({ top: 0 });
   };
 
@@ -958,6 +968,8 @@ export default function App() {
           {(view === 'privacy' || view === 'terms') && (
             <LegalPage doc={view} onBack={goHome} />
           )}
+
+          {view === 'delete-account' && <AccountDeletionPage onBack={goHome} />}
         </AnimatePresence>
       </main>
 
@@ -971,7 +983,7 @@ export default function App() {
           <div className="flex items-center space-x-5">
             <a
               href="/privacy"
-              onClick={(e) => { e.preventDefault(); openLegal('privacy'); }}
+              onClick={(e) => { e.preventDefault(); openStandalone('privacy'); }}
               className="text-[10px] font-bold uppercase tracking-widest text-app-muted hover:text-blue-400 transition-colors"
             >
               Privacy Policy
@@ -979,10 +991,18 @@ export default function App() {
             <span className="opacity-20">|</span>
             <a
               href="/terms"
-              onClick={(e) => { e.preventDefault(); openLegal('terms'); }}
+              onClick={(e) => { e.preventDefault(); openStandalone('terms'); }}
               className="text-[10px] font-bold uppercase tracking-widest text-app-muted hover:text-blue-400 transition-colors"
             >
               Terms &amp; Conditions
+            </a>
+            <span className="opacity-20">|</span>
+            <a
+              href="/delete-account"
+              onClick={(e) => { e.preventDefault(); openStandalone('delete-account'); }}
+              className="text-[10px] font-bold uppercase tracking-widest text-app-muted hover:text-rose-400 transition-colors"
+            >
+              Delete Account
             </a>
           </div>
           <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-30">© 2026 IELTS Challenge • Dong Tan Nguyen</p>

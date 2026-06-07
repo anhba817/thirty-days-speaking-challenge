@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   BottomSheetBackdrop,
@@ -7,12 +7,12 @@ import {
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
-import { LogOut } from 'lucide-react-native';
+import { LogOut, Trash2 } from 'lucide-react-native';
 
 import { useAuth } from '../auth/AuthContext';
 
 export function UserMenu() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
   const router = useRouter();
   const ref = useRef<BottomSheetModal>(null);
 
@@ -42,6 +42,42 @@ export function UserMenu() {
     router.push(path);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account?',
+      'Your account and all your progress, attempts, and recordings will be permanently deleted after a 30-day grace period. You can cancel any time before then by signing in again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              try {
+                const scheduledAt = await deleteAccount();
+                const date = new Date(scheduledAt).toLocaleDateString(
+                  undefined,
+                  { year: 'numeric', month: 'long', day: 'numeric' },
+                );
+                ref.current?.dismiss();
+                router.replace('/');
+                Alert.alert(
+                  'Account scheduled for deletion',
+                  `Your data will be permanently deleted on ${date}. To cancel, sign in again before that date.`,
+                );
+              } catch {
+                Alert.alert(
+                  'Could not delete account',
+                  'Something went wrong. Please check your connection and try again.',
+                );
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <>
       <Pressable
@@ -53,7 +89,7 @@ export function UserMenu() {
 
       <BottomSheetModal
         ref={ref}
-        snapPoints={['42%']}
+        snapPoints={['52%']}
         backgroundStyle={{ backgroundColor: '#0f172a' }}
         handleIndicatorStyle={{ backgroundColor: '#475569' }}
         backdropComponent={renderBackdrop}
@@ -77,6 +113,14 @@ export function UserMenu() {
           >
             <LogOut size={18} color="#fda4af" />
             <Text className="text-rose-300 ml-3 font-semibold">Sign out</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleDeleteAccount}
+            className="flex-row items-center border border-rose-500/30 rounded-2xl px-4 py-3 mt-3 active:opacity-80"
+          >
+            <Trash2 size={18} color="#fb7185" />
+            <Text className="text-rose-400 ml-3 font-semibold">Delete account</Text>
           </Pressable>
 
           <View className="flex-row items-center justify-center mt-6">

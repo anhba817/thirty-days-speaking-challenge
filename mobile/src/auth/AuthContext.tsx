@@ -12,6 +12,7 @@ import * as SecureStore from 'expo-secure-store';
 import {
   AuthSession,
   AuthUser,
+  deleteAccount as deleteAccountApi,
   fetchMe,
   loginWithGoogle,
 } from '../services/authService';
@@ -22,11 +23,13 @@ interface AuthContextValue {
   initialized: boolean;
   signIn: (googleIdToken: string) => Promise<AuthSession>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<string>;
 }
 
 const Ctx = createContext<AuthContextValue | null>(null);
 const TOKEN_KEY = 'ielts-auth-token';
 const USER_KEY = 'ielts-auth-user';
+const PROGRESS_KEY = 'ielts-30-day-progress';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
@@ -86,8 +89,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    if (!token) throw new Error('Not signed in');
+    const { scheduledDeletionAt } = await deleteAccountApi(token);
+    // Sign out locally; signing in again before the scheduled date cancels
+    // the deletion server-side.
+    await Promise.all([
+      SecureStore.deleteItemAsync(TOKEN_KEY),
+      AsyncStorage.removeItem(USER_KEY),
+      AsyncStorage.removeItem(PROGRESS_KEY),
+    ]);
+    setToken(null);
+    setUser(null);
+    return scheduledDeletionAt;
+  }, [token]);
+
   return (
-    <Ctx.Provider value={{ user, token, initialized, signIn, signOut }}>
+    <Ctx.Provider
+      value={{ user, token, initialized, signIn, signOut, deleteAccount }}
+    >
       {children}
     </Ctx.Provider>
   );

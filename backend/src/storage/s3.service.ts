@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  DeleteObjectsCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -64,6 +66,39 @@ export class S3Service {
         ContentType: contentType,
       }),
     );
+  }
+
+  /**
+   * Delete every audio object stored for a user (the `<prefix>/<userId>/`
+   * "folder"). Used for account deletion. Paginates + bulk-deletes in case a
+   * user has more than 1000 recordings.
+   */
+  async deleteUserAudio(userId: string): Promise<void> {
+    const prefix = `${this.prefix}${userId}/`;
+    let continuationToken: string | undefined;
+    do {
+      const list = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+      const keys = (list.Contents ?? [])
+        .map((o) => o.Key)
+        .filter((k): k is string => Boolean(k));
+      if (keys.length > 0) {
+        await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true },
+          }),
+        );
+      }
+      continuationToken = list.IsTruncated
+        ? list.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
   }
 
   async getPresignedGetUrl(key: string) {

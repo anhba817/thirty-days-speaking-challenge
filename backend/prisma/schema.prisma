@@ -14,8 +14,14 @@ model User {
   name          String?
   avatarUrl     String?
   createdAt     DateTime       @default(now())
+  // When set, the account is scheduled for permanent deletion at this time
+  // (deletion-request time + 30-day grace period). Cleared if the user signs
+  // in again before then. A daily job purges accounts once this is in the past.
+  deletionScheduledAt DateTime?
   completedDays CompletedDay[]
   attempts      Attempt[]
+
+  @@index([deletionScheduledAt])
 }
 
 model CompletedDay {

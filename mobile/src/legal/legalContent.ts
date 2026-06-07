@@ -56,7 +56,8 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     heading: '6. Data storage and retention',
     body: [
-      'Your account data, transcripts, scores, and audio recordings are stored on our servers for as long as your account is active so you can review your progress. You may request deletion of your account and associated data at any time (see "Your rights"). We retain data only as long as needed for the purposes described here or as required by law.',
+      'Your account data, transcripts, scores, and audio recordings are stored on our servers for as long as your account is active so you can review your progress. You may request deletion of your account and associated data at any time (see "Your rights").',
+      'When you request deletion, your account is scheduled for permanent removal after a 30-day grace period. During this period your data is retained so you can recover the account simply by signing in again, which cancels the request. Once the 30 days elapse, your account and all associated data are permanently deleted. We otherwise retain data only as long as needed for the purposes described here or as required by law.',
     ],
   },
   {
