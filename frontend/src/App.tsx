@@ -56,11 +56,21 @@ const PROGRESS_STORAGE_KEY = 'ielts-30-day-progress';
 // --- Types ---
 type AppState = 'dashboard' | 'day-detail' | 'feedback' | 'privacy' | 'terms';
 
+// --- Path-based routing for the standalone legal pages ---
+// These are the only views with their own URL (e.g. https://domain/privacy);
+// every other view lives under "/". Used so the privacy/terms pages can be
+// linked to directly (e.g. from the Google Play Data Safety form).
+const LEGAL_PATHS: Record<string, 'privacy' | 'terms'> = {
+  '/privacy': 'privacy',
+  '/terms': 'terms',
+};
+const pathToView = (pathname: string): AppState => LEGAL_PATHS[pathname] ?? 'dashboard';
+
 // --- Utils ---
 const cn = (...classes: string[]) => classes.filter(Boolean).join(' ');
 
 export default function App() {
-  const [view, setView] = useState<AppState>('dashboard');
+  const [view, setView] = useState<AppState>(() => pathToView(window.location.pathname));
   const [selectedDay, setSelectedDay] = useState<DayChallenge | null>(null);
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [userAnswer, setUserAnswer] = useState('');
@@ -90,6 +100,30 @@ export default function App() {
     const savedTheme = localStorage.getItem('ielts-theme') as 'dark' | 'light';
     if (savedTheme) setTheme(savedTheme);
   }, []);
+
+  // Keep the legal pages in sync with the browser back/forward buttons.
+  useEffect(() => {
+    const onPopState = () => setView(pathToView(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // Open a legal page at its own URL (e.g. /privacy) so it can be deep-linked.
+  const openLegal = (doc: 'privacy' | 'terms') => {
+    if (window.location.pathname !== `/${doc}`) {
+      window.history.pushState({}, '', `/${doc}`);
+    }
+    setView(doc);
+    window.scrollTo({ top: 0 });
+  };
+
+  // Return to the app root, restoring the "/" URL when leaving a legal page.
+  const goHome = () => {
+    if (window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+    }
+    setView('dashboard');
+  };
 
   // Load progress — from server when authed, localStorage otherwise.
   // On sign-in, any anonymous local progress is merged into the server first.
@@ -300,7 +334,7 @@ export default function App() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass px-8 py-4 flex items-center justify-between border-b border-white/5">
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setView('dashboard')}>
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={goHome}>
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white glow-blue">
             <Mic2 size={20} />
           </div>
@@ -922,7 +956,7 @@ export default function App() {
           )}
 
           {(view === 'privacy' || view === 'terms') && (
-            <LegalPage doc={view} onBack={() => setView('dashboard')} />
+            <LegalPage doc={view} onBack={goHome} />
           )}
         </AnimatePresence>
       </main>
@@ -935,21 +969,23 @@ export default function App() {
         </div>
         <div className="flex flex-col items-center md:items-end gap-3">
           <div className="flex items-center space-x-5">
-            <button
-              onClick={() => { setView('privacy'); window.scrollTo({ top: 0 }); }}
+            <a
+              href="/privacy"
+              onClick={(e) => { e.preventDefault(); openLegal('privacy'); }}
               className="text-[10px] font-bold uppercase tracking-widest text-app-muted hover:text-blue-400 transition-colors"
             >
               Privacy Policy
-            </button>
+            </a>
             <span className="opacity-20">|</span>
-            <button
-              onClick={() => { setView('terms'); window.scrollTo({ top: 0 }); }}
+            <a
+              href="/terms"
+              onClick={(e) => { e.preventDefault(); openLegal('terms'); }}
               className="text-[10px] font-bold uppercase tracking-widest text-app-muted hover:text-blue-400 transition-colors"
             >
               Terms &amp; Conditions
-            </button>
+            </a>
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-30">© 2026 IELTS Challenge • Nguyen Huyen Official</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-30">© 2026 IELTS Challenge • Dong Tan Nguyen</p>
         </div>
       </footer>
     </div>

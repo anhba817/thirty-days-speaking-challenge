@@ -6,10 +6,8 @@
 // Shared legal copy for the IELTS 30-Day Challenge web app.
 // Keep this in sync with mobile/src/legal/legalContent.ts.
 //
-// TODO: replace SUPPORT_EMAIL with the real, monitored support inbox before
-// publishing. Google Play and most app stores require a reachable contact.
 export const PROVIDER_NAME = 'IELTS 30-Day Challenge';
-export const SUPPORT_EMAIL = 'support@ielts30day.app';
+export const SUPPORT_EMAIL = 'dong.ng.tan@gmail.com';
 export const LEGAL_EFFECTIVE_DATE = 'June 7, 2026';
 
 export interface LegalSection {
