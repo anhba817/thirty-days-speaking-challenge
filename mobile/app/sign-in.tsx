@@ -30,6 +30,20 @@ export default function SignInScreen() {
           Continue without signing in
         </Text>
       </Pressable>
+
+      <View className="mt-12 flex-row items-center justify-center">
+        <Pressable onPress={() => router.push('/privacy')} className="active:opacity-70 px-2">
+          <Text className="text-slate-500 text-xs uppercase tracking-widest">
+            Privacy Policy
+          </Text>
+        </Pressable>
+        <Text className="text-slate-700 text-xs px-1">·</Text>
+        <Pressable onPress={() => router.push('/terms')} className="active:opacity-70 px-2">
+          <Text className="text-slate-500 text-xs uppercase tracking-widest">
+            Terms &amp; Conditions
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

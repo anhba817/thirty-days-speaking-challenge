@@ -27,6 +27,7 @@ import { CHALLENGE_DATA, DayChallenge } from './data/challenge';
 import { getSpeakingFeedback, FeedbackResponse, getExampleExplanation, translateKeywords } from './services/geminiService';
 import { useAuth } from './auth/AuthContext';
 import { UserMenu } from './auth/UserMenu';
+import { LegalPage } from './legal/LegalPage';
 import {
   fetchProgress,
   getAttemptAudioUrl,
@@ -53,7 +54,7 @@ function blobToBase64(blob: Blob): Promise<string> {
 const PROGRESS_STORAGE_KEY = 'ielts-30-day-progress';
 
 // --- Types ---
-type AppState = 'dashboard' | 'day-detail' | 'feedback';
+type AppState = 'dashboard' | 'day-detail' | 'feedback' | 'privacy' | 'terms';
 
 // --- Utils ---
 const cn = (...classes: string[]) => classes.filter(Boolean).join(' ');
@@ -919,6 +920,10 @@ export default function App() {
               </div>
             </motion.div>
           )}
+
+          {(view === 'privacy' || view === 'terms') && (
+            <LegalPage doc={view} onBack={() => setView('dashboard')} />
+          )}
         </AnimatePresence>
       </main>
 
@@ -928,7 +933,24 @@ export default function App() {
            <span className="opacity-20">|</span>
            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500/50">Immersive Engine v2</span>
         </div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-30">© 2026 IELTS Challenge • Nguyen Huyen Official</p>
+        <div className="flex flex-col items-center md:items-end gap-3">
+          <div className="flex items-center space-x-5">
+            <button
+              onClick={() => { setView('privacy'); window.scrollTo({ top: 0 }); }}
+              className="text-[10px] font-bold uppercase tracking-widest text-app-muted hover:text-blue-400 transition-colors"
+            >
+              Privacy Policy
+            </button>
+            <span className="opacity-20">|</span>
+            <button
+              onClick={() => { setView('terms'); window.scrollTo({ top: 0 }); }}
+              className="text-[10px] font-bold uppercase tracking-widest text-app-muted hover:text-blue-400 transition-colors"
+            >
+              Terms &amp; Conditions
+            </button>
+          </div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-30">© 2026 IELTS Challenge • Nguyen Huyen Official</p>
+        </div>
       </footer>
     </div>
   );

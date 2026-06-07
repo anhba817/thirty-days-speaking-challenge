@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -12,6 +13,7 @@ import { useAuth } from '../auth/AuthContext';
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const ref = useRef<BottomSheetModal>(null);
 
   const renderBackdrop = useCallback(
@@ -35,6 +37,11 @@ export function UserMenu() {
     void signOut();
   };
 
+  const goTo = (path: '/privacy' | '/terms') => {
+    ref.current?.dismiss();
+    router.push(path);
+  };
+
   return (
     <>
       <Pressable
@@ -46,7 +53,7 @@ export function UserMenu() {
 
       <BottomSheetModal
         ref={ref}
-        snapPoints={['30%']}
+        snapPoints={['42%']}
         backgroundStyle={{ backgroundColor: '#0f172a' }}
         handleIndicatorStyle={{ backgroundColor: '#475569' }}
         backdropComponent={renderBackdrop}
@@ -71,6 +78,20 @@ export function UserMenu() {
             <LogOut size={18} color="#fda4af" />
             <Text className="text-rose-300 ml-3 font-semibold">Sign out</Text>
           </Pressable>
+
+          <View className="flex-row items-center justify-center mt-6">
+            <Pressable onPress={() => goTo('/privacy')} className="active:opacity-70 px-2">
+              <Text className="text-slate-500 text-xs uppercase tracking-widest">
+                Privacy Policy
+              </Text>
+            </Pressable>
+            <Text className="text-slate-700 text-xs px-1">·</Text>
+            <Pressable onPress={() => goTo('/terms')} className="active:opacity-70 px-2">
+              <Text className="text-slate-500 text-xs uppercase tracking-widest">
+                Terms &amp; Conditions
+              </Text>
+            </Pressable>
+          </View>
         </BottomSheetView>
       </BottomSheetModal>
     </>
